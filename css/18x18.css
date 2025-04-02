@@ -1,0 +1,51 @@
+body {
+    background: #000;
+    font-family: 'Indie Flower', 'Comic Sans', cursive;
+    position: relative;
+}
+
+.heading-content {
+    text-align: center;
+    color: #fff;
+    padding-top: 0px;
+}
+
+.gameContainer16 {
+    background: #ddd;
+    height: 91vh;
+    width: 60%;
+    min-width: 750px;
+    margin: auto auto;
+    top: 0;
+}
+
+.map-16x16 {
+    display: grid;
+    grid-template-columns: repeat(16, auto);
+    justify-content: center;
+    padding: 5px 0px 10px 0;
+}
+
+.cell-16 {
+    width: 32px;
+    height: 32px;
+    background-color: #ffffff;
+    border: 0px solid black;
+    box-shadow: 0 0 0 2px black;
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #333;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+}
+
+.cell:hover {
+    background-color: pink;
+}
+
+.map-18x18 div {
+    font-size: 21px;
+}
+

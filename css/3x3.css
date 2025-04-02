@@ -1,0 +1,48 @@
+body {
+    background: #000;
+    font-family: 'Indie Flower', 'Comic Sans', cursive;
+    position: relative;
+}
+
+.heading-content {
+    text-align: center;
+    color: #fff;
+    padding-top: 0px;
+}
+
+.gameContainer3 {
+    background: #ddd;
+    height: 85vh;
+    width: 60%;
+    min-width: 500px;
+    margin: auto auto;
+}
+
+.map-3x3 {
+    display: grid;
+    grid-template-columns: repeat(3, auto);
+    justify-content: center;
+}
+
+.cell-3 {
+    width: 100px;
+    height: 100px;
+    background-color: #ffffff;
+    border: 2px solid black;
+    box-shadow: 0 0 0 2px black;
+    font-size: 2rem;
+    font-weight: bold;
+    color: #333;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+}
+
+.cell:hover {
+    background-color: pink;
+}
+
+.map-3x3 div {
+    font-size: 50px;
+}
