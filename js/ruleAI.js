@@ -1,24 +1,24 @@
 const mapContainer16 = document.querySelector(".map-16x16");
 const mapContainer3 = document.querySelector(".map-3x3");
 const displayTurn = document.getElementById("player-turn");
-
 const displayScorePlayer = document.getElementById("score-player");
 const displayScoreAI = document.getElementById("score-AI");
-
 const gameContainer = document.querySelector(".game-container");
 const namePlayer = document.getElementById("name-player");
-
+const nameAI = document.getElementById("name-AI");
 const currentUser = JSON.parse(localStorage.getItem("currentUser"));
-console.log(currentUser.username)
-namePlayer.textContent= currentUser.username;
+let levelGame = localStorage.getItem("level");
 
-console.log(gameContainer);
-let gameOver = false; // biến để kết thúc trò chơi
+namePlayer.textContent = currentUser.username;
+nameAI.textContent = "AI" + "(" + levelGame + ")";
+
+let gameOver = false;
 let currentPlayer = "X";
 let moves = [];
 let countScorePlayer = 0;
 let countScoreAI = 0;
 let winningPositions = [];
+let lastMoveCell = null;
 
 let size = parseInt(localStorage.getItem("size"));
 const winLength = size === 3 ? 3 : 5;
@@ -74,9 +74,14 @@ function handleCellClick(event) {
 
   if (moves[index] === "") {
     // nếu ô chưa được đánh thì
+    if (lastMoveCell) {
+      lastMoveCell.style.backgroundColor = "";
+    }
     moves[index] = currentPlayer; // cho ô đó gán bằng lượt hiện tại
     cell.textContent = currentPlayer; // hiện ô đó lên màn hình
+    cell.style.backgroundColor = "#add8e6";
 
+    lastMoveCell = cell;
     // Kiểm tra chiến thắng
     const winner = checkWinner();
 
@@ -113,7 +118,15 @@ function handleCellClick(event) {
 
     currentPlayer = "O"; // Đổi lượt sang O
     displayTurn.textContent = currentPlayer;
-    setTimeout(aiMove, 100);
+
+    setTimeout(() => {
+      if (levelGame === "easy") {
+        aiMoveEasy();
+      } else {
+        aiMoveNormal();
+      }
+    }, 100);
+    // setTimeout(aiMoveNormal, 100);
   }
 }
 
@@ -134,19 +147,26 @@ window.onload = createMap;
 
 const depthLimit = 3; // độ sâu
 
-// hàm tạo nước đi cho AI
-function aiMove() {
-  //các phần tử có thể đi
+// hàm tạo nước đi cho AI (chế độ normal)
+function aiMoveNormal() {
   let possibleMoves = getPossibleMoves();
 
-  // kiểm tra nước đi nào giúp AI thắng ngay lập tức
-  // đánh O vào từng ô để kiểm tra thử
+  // Kiểm tra nước thắng ngay
   for (let move of possibleMoves) {
     moves[move] = "O";
-
     if (checkWinner() === "O") {
-      // sau đó kiểm tra chiến thắng
-      document.getElementById(move).textContent = "O";
+      let cell = document.getElementById(move);
+      cell.textContent = "O";
+
+      // Xóa màu ô trước đó nếu có
+      if (lastMoveCell) {
+        lastMoveCell.style.backgroundColor = "";
+      }
+
+      // Tô màu ô hiện tại của AI
+      cell.style.backgroundColor = "#add8e6";
+      lastMoveCell = cell; // Lưu ô này làm ô cuối cùng của AI
+
       countScoreAI++;
       gameOver = true;
       highlightWinningCells();
@@ -154,24 +174,45 @@ function aiMove() {
         if (confirm("O thắng! Chơi lại nhé?")) {
           createMap();
           countMatch(currentUser.username);
-          currentPlayer = "O";
-          setTimeout(aiMove, 100);
+          currentPlayer = "X";
+          displayTurn.textContent = currentPlayer;
         }
       }, 500);
-
-      return; //nếu có thì ngưng tìm kiếm nước đi
+      return;
     }
-    // không có thì trả về nước trước đó
     moves[move] = "";
   }
 
-  // nếu không có nước thắng ngay => tìm nước đi tốt nhất bằng minimax
+  // Kiểm tra chặn nước thắng của người chơi
+  for (let move of possibleMoves) {
+    moves[move] = "X";
+    if (checkWinner() === "X") {
+      moves[move] = "O";
+      let cell = document.getElementById(move);
+      cell.textContent = "O";
+
+      // Xóa màu ô trước đó nếu có
+      if (lastMoveCell) {
+        lastMoveCell.style.backgroundColor = "";
+      }
+
+      // Tô màu ô hiện tại của AI
+      cell.style.backgroundColor = "#add8e6";
+      lastMoveCell = cell; // Lưu ô này làm ô cuối cùng của AI
+
+      currentPlayer = "X";
+      displayTurn.textContent = currentPlayer;
+      return;
+    }
+    moves[move] = "";
+  }
+
+  // Tìm nước đi tốt nhất bằng Minimax
   let bestMove = -1;
   let bestScore = -Infinity;
-
   for (let move of possibleMoves) {
     moves[move] = "O";
-    let score = minimax(0, false, -Infinity, Infinity); // gọi đệ quy hàm minimax
+    let score = minimax(0, false, -Infinity, Infinity);
     moves[move] = "";
 
     if (score > bestScore) {
@@ -180,17 +221,26 @@ function aiMove() {
     }
   }
 
-  // đi nước đi tốt nhất
   if (bestMove !== -1) {
     moves[bestMove] = "O";
-    document.getElementById(bestMove).textContent = "O";
+    let cell = document.getElementById(bestMove);
+    cell.textContent = "O";
+
+    // Xóa màu ô trước đó nếu có
+    if (lastMoveCell) {
+      lastMoveCell.style.backgroundColor = "";
+    }
+
+    // Tô màu ô hiện tại của AI
+    cell.style.backgroundColor = "#add8e6";
+    lastMoveCell = cell; // Lưu ô này làm ô cuối cùng của AI
   }
 
-  // kiểm tra nếu AI có thắng không sau khi đánh nước này
+  // Kiểm tra nếu AI thắng
   if (checkWinner()) {
     countScoreAI++;
     gameOver = true;
-    highlightWinningCells(); // Tô màu trước khi hiển thị thông báo
+    highlightWinningCells();
     setTimeout(() => {
       if (confirm("O thắng! Chơi lại nhé?")) {
         createMap();
@@ -199,7 +249,41 @@ function aiMove() {
       }
     }, 500);
   } else {
-    // đổi lại lượt chơi nếu chưa có người thắng
+    currentPlayer = "X";
+    displayTurn.textContent = currentPlayer;
+  }
+}
+
+function aiMoveEasy() {
+  let possibleMoves = getPossibleMoves();
+  if (possibleMoves === 0) return;
+
+  let randomMove =
+    possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
+
+  if (lastMoveCell) {
+    lastMoveCell.style.backgroundColor = "";
+  }
+
+  moves[randomMove] = "O";
+  const cell = document.getElementById(randomMove);
+  cell.textContent = "O";
+  cell.style.backgroundColor = "#add8e6";
+
+  lastMoveCell = cell;
+
+  if (checkWinner()) {
+    countScoreAI++;
+    gameOver = true;
+    highlightWinningCells();
+    setTimeout(() => {
+      if (confirm("O thắng! Chơi lại nhé?")) {
+        createMap();
+        countMatch(currentUser.username);
+        currentPlayer = "X";
+      }
+    }, 500);
+  } else {
     currentPlayer = "X";
     displayTurn.textContent = currentPlayer;
   }
@@ -211,15 +295,14 @@ function evaluateBoard() {
   const directions = [
     [1, 0], // hàng ngang
     [0, 1], // hàng dọc
-    [1, 1], // đường chéo \
-    [1, -1], // đường chéo /
+    [1, 1], // đường chéo xuống phải
+    [1, -1], // đường chéo xuống trái
   ];
 
-  // hàm trả về điểm của các nước cờ
+  // Hàm trả về điểm của chuỗi liên tiếp
   function getConsecutiveSetScore(count, blocks, currPlayerTurn) {
     const winScore = 1000000;
     const winGuarantee = 1000000;
-    // console.log(size)
     if (size === 16) {
       if (currPlayerTurn) {
         // Xét cho AI (O)
@@ -229,9 +312,9 @@ function evaluateBoard() {
           case 4:
             return blocks === 0 ? winGuarantee * 2 : winGuarantee;
           case 3:
-            return blocks === 0 ? 100000 : 500; 
+            return blocks === 0 ? 100000 : 500;
           case 2:
-            return blocks === 0 ? 200 : 20; 
+            return blocks === 0 ? 200 : 20;
           case 1:
             return 5;
         }
@@ -241,89 +324,96 @@ function evaluateBoard() {
           case 5:
             return -winScore;
           case 4:
-            return blocks === 0 ? -winGuarantee * 2 : -winGuarantee * 1.5; 
+            return blocks === 0 ? -winGuarantee * 2 : -winGuarantee * 1.5;
           case 3:
-            return blocks === 0 ? -300000 : -2000; 
+            return blocks === 0 ? -300000 : -2000;
           case 2:
-            return blocks === 0 ? -2000 : -100; 
+            return blocks === 0 ? -2000 : -100;
           case 1:
             return -5;
         }
       }
-
-    }
-    else {
+    } else {
       switch (count) {
-      case 3:
-        if (blocks === 0) return currPlayerTurn ? 50000 : 200;
-        return currPlayerTurn ? 20 : 5;
-      case 2:
-        return blocks === 0 ? (currPlayerTurn ? 7 : 5) : 3;
-      case 1:
-        return 1;
+        case 3:
+          return currPlayerTurn ? winGuarantee : -winGuarantee;
+        case 2:
+          return blocks === 0
+            ? currPlayerTurn
+              ? 10000
+              : -10000
+            : currPlayerTurn
+            ? 50
+            : -50;
+        case 1:
+          return currPlayerTurn ? 10 : -10;
+      }
+      return 0;
     }
-    return 0;
-    }
-    return 0;
   }
 
-
-  // duyệt qua từng ô trên bàn cờ
+  // Duyệt qua các ô trên bàn cờ
   for (let r = 0; r < size; r++) {
     for (let c = 0; c < size; c++) {
-      let index = r * size + c; // vị trí trong mảng moves
+      let index = r * size + c;
       if (moves[index] === "") continue;
 
-      // xác định người chơi
       let player = moves[index];
       let isAITurn = player === "O";
 
-      // duyệt qua các hướng
+      // Duyệt qua từng hướng
       for (let [dr, dc] of directions) {
-        let count = 1,
-          blocks = 0;
-
-        // tạo new row, new col, new index
-        for (let step = 1; step < 5; step++) {
-          let nr = r + dr * step;
-          let nc = c + dc * step;
-          let nIndex = nr * size + nc;
-          if (
-            nr < 0 ||
-            nr >= size ||
-            nc < 0 ||
-            nc >= size ||
-            moves[nIndex] !== player
-          )
-            break;
-          count++;
-        }
-
-        // duyệt ngược
+        // Kiểm tra nếu ô hiện tại không phải là ô bắt đầu của chuỗi theo hướng [dr, dc]
         let prevRow = r - dr;
         let prevCol = c - dc;
-        let prevIndex = prevRow * size + prevCol;
         if (
-          prevRow < 0 ||
-          prevRow >= size ||
-          prevCol < 0 ||
-          prevCol >= size ||
-          moves[prevIndex] !== ""
-        )
-          blocks++;
+          prevRow >= 0 &&
+          prevRow < size &&
+          prevCol >= 0 &&
+          prevCol < size &&
+          moves[prevRow * size + prevCol] === player
+        ) {
+          continue; // Bỏ qua vì chuỗi này đã được tính từ ô đầu tiên
+        }
 
-        // duyệt xuôi
-        let nextRow = r + dr * count;
-        let nextCol = c + dc * count;
-        let nextIndex = nextRow * size + nextCol;
+        let count = 1,
+          blocks = 0;
+        // Duyệt xuôi theo hướng [dr, dc]
+        let nr = r + dr;
+        let nc = c + dc;
+        while (
+          nr >= 0 &&
+          nr < size &&
+          nc >= 0 &&
+          nc < size &&
+          moves[nr * size + nc] === player
+        ) {
+          count++;
+          nr += dr;
+          nc += dc;
+        }
+        // Kiểm tra ô chặn sau chuỗi
         if (
-          nextRow < 0 ||
-          nextRow >= size ||
-          nextCol < 0 ||
-          nextCol >= size ||
-          moves[nextIndex] !== ""
-        )
+          nr < 0 ||
+          nr >= size ||
+          nc < 0 ||
+          nc >= size ||
+          moves[nr * size + nc] !== ""
+        ) {
           blocks++;
+        }
+        // Kiểm tra ô chặn trước chuỗi (ở phía ngược lại)
+        let br = r - dr;
+        let bc = c - dc;
+        if (
+          br < 0 ||
+          br >= size ||
+          bc < 0 ||
+          bc >= size ||
+          moves[br * size + bc] !== ""
+        ) {
+          blocks++;
+        }
 
         score += getConsecutiveSetScore(count, blocks, isAITurn);
       }
@@ -336,7 +426,7 @@ function evaluateBoard() {
 function minimax(depth, isMaximizing, alpha, beta) {
   // isMaximizing : O => true, X => false
   let winner = checkWinner(); // kiểm tra người chiến thắng
-  if (winner) return winner === "O" ? 1000000 - depth : -1000000 + depth; 
+  if (winner) return winner === "O" ? 1000000 - depth : -1000000 + depth;
   if (!moves.includes("") || depth >= depthLimit) return evaluateBoard();
 
   let bestScore = isMaximizing ? -Infinity : Infinity;
@@ -397,7 +487,11 @@ function updateRankingPoint(winner) {
   let userIndex = users.findIndex((user) => user.username === winner);
 
   if (userIndex !== -1) {
-    users[userIndex].point += 5;
+    if (levelGame === "easy") {
+      users[userIndex].point += 1;
+    } else {
+      users[userIndex].point += 3;
+    }
     users[userIndex].matchWin += 1;
     localStorage.setItem("users", JSON.stringify(users));
   }
@@ -407,7 +501,7 @@ function updateRankingPoint(winner) {
 function countMatch(userCurrent) {
   let users = JSON.parse(localStorage.getItem("users")) || [];
   let userIndex = users.findIndex((user) => user.username === userCurrent);
-  if (userIndex !== -1) {
+  if (userIndex !== -1) {1
     users[userIndex].countMatch += 1;
     localStorage.setItem("users", JSON.stringify(users));
   }

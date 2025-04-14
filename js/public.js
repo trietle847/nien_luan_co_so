@@ -16,10 +16,12 @@ returnHomebtn.addEventListener("click", () => {
   if (confirm("Bạn có muốn lưu lại trước khi thoát không?")) {
     const currentUser = localStorage.getItem("currentUser")
     const secondUser = localStorage.getItem("secondUser");
-    // nếu có thì lưu bàn cờ lại vào kho, chuyển về trang home
+    let levelGame = localStorage.getItem("level");
+    
     localStorage.setItem("gameState", JSON.stringify({
       modeGame: mode,
       sizeMap: size,
+      level: levelGame, 
       moves: moves,
       currentPlayer: currentPlayer,
       gameOver: gameOver,
@@ -29,8 +31,7 @@ returnHomebtn.addEventListener("click", () => {
       secondUser: secondUser,
     }));
   }    
-  // localStorage.removeItem("mode");
-  // localStorage.removeItem("size");
+
   window.location.href = "index.html";
 });
 
@@ -82,3 +83,4 @@ function checkDirection(row, col, dx, dy) {
   }
   return false;
 }
+

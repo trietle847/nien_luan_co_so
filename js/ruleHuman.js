@@ -64,6 +64,7 @@ function createMap() {
   gameOver = false;
 }
 
+let lastMoveCell = null;
 // Xử lý khi người chơi click vào ô cờ
 function handleCellClick(event) {
   if (gameOver) return;
@@ -72,8 +73,14 @@ function handleCellClick(event) {
   const index = parseInt(cell.id);
 
   if (moves[index] === "") {
-    moves[index] = currentPlayer;
-    cell.textContent = currentPlayer;
+    if (lastMoveCell) {
+      lastMoveCell.style.backgroundColor = "";
+    }
+    moves[index] = currentPlayer; // cho ô đó gán bằng lượt hiện tại
+    cell.textContent = currentPlayer; // hiện ô đó lên màn hình
+    cell.style.backgroundColor = "#add8e6";
+
+    lastMoveCell = cell;
 
     const winner = checkWinner();
     if (winner) {
